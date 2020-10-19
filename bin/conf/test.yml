@@ -1,0 +1,37 @@
+logs:
+  - name: root
+    level: info
+    formatter: "%d%T%m%n" #不能直接%
+    appender:
+      - type: FileLogAppender
+        file: log.txt
+      - type: StdoutLogAppender
+  - name: system
+    level: info
+    formatter: "%d%T%m%n"
+    appender:
+      - type: FileLogAppender
+        file: log.txt
+      - type: StdoutLogAppender
+system:
+  port: 9900
+  value: 15
+  int_vec:
+    - 10
+    - 30
+  int_list: [10,20,30]
+  int_set: [1,2,3,1]
+  unordered_set: [23,54]
+  map: 
+    k: 20
+    k1: 40
+    k2: 90
+  umap:
+    k1: 9
+    k2: 10
+    k3: 11
+class:
+  person:
+    name: hello
+    age: 12
+    sex: true
