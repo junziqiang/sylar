@@ -59,6 +59,8 @@ util.h
 /root/syalr/sylar/util.h
 
 /root/syalr/sylar/sigleton.h
+memory
+-
 
 /root/syalr/sylar/util.h
 pthread.h

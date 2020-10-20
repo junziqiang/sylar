@@ -50,11 +50,13 @@
 
 #define SYLAR_LOG_ROOT() sylar::LoggerMgr::GetInstance()->getRoot()
 
+#define SYLAR_LOG_NAME(name) sylar::LoggerMgr::GetInstance()->getLogger(name)
+
 #pragma endregion
 
 namespace sylar{
 class Logger;
-
+class LoggerManager;
 
 
 
@@ -75,6 +77,7 @@ public:
     };
     //转化为字符串
     static const char* ToString(LogLevel::Level Level);
+    static LogLevel::Level FromString(const std::string& str);
 };
 #pragma endregion 日志级别
 
@@ -151,9 +154,13 @@ public:
             virtual void format( std::ostream &os,std::shared_ptr<Logger> logger,LogLevel::Level level,LogEvent::ptr event) = 0; //直接输出到流中
     };
     void init();
+    bool isError() const{return m_error;} 
+    const std::string getPattern() const { return m_pattern;}
 private:
     std::string m_pattern;
     std::vector<FormatItem::ptr> m_items;
+    //formatter的状态
+    bool m_error = false;
 };
 #pragma endregion
 
@@ -164,6 +171,7 @@ private:
 //日志输出的地方
 #pragma region
 class LogAppender{
+    friend class Logger;
 public:
     typedef std::shared_ptr<LogAppender> ptr;
     virtual ~LogAppender(){}
@@ -179,17 +187,15 @@ public:
     */
    //子类必须实现纯虚函数
     virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
-    void setFormatter(LogFormatter::ptr val){
-        m_formatter = val;
-    }
-    LogFormatter::ptr getFormatter() const{
-        return m_formatter;
-    }
+    virtual std::string toYamlString()=0;
+    void setFormatter(LogFormatter::ptr val);
+    LogFormatter::ptr getFormatter();
     LogLevel::Level getLevel() const{return m_level;}
     void setLevel(LogLevel::Level val){m_level = val;}
 //子类可能要用到level
 protected:
     LogLevel::Level m_level = LogLevel::DEBUG;
+    bool m_hasFormatter = false;
     LogFormatter::ptr m_formatter;
 };
 #pragma endregion
@@ -200,6 +206,7 @@ protected:
 //日志器
 #pragma region
 class Logger : public std::enable_shared_from_this<Logger>{
+friend class LoggerManager;
 public:
     typedef std::shared_ptr<Logger> ptr;
     //日志
@@ -214,6 +221,7 @@ public:
 
     void addAppender(LogAppender::ptr appender);
     void delAppender(LogAppender::ptr appender);
+    void clearAppenders();
     LogLevel::Level getLevel() const {
         return m_level;
     }
@@ -221,12 +229,20 @@ public:
         m_level = val;
     }
     const std::string getName() const{return m_name;}
+
+    void setFormatter(LogFormatter::ptr val);
+    void setFormatter(const std::string& val);
+    LogFormatter::ptr getFormatter();
+
+    std::string toYamlString();
 private:
     
     std::string m_name;         //名字
     LogLevel::Level m_level;
-    std::list<LogAppender::ptr> m_appender;     //appender列表
+    std::list<LogAppender::ptr> m_appenders;     //appender列表
     LogFormatter::ptr m_formatter;
+
+    Logger::ptr m_root;
 };
 #pragma endregion
 
@@ -240,6 +256,7 @@ public:
     typedef std::shared_ptr<StdoutLogAppender> ptr;
     //override 说明该纯虚函数被实现了
     virtual void log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override;
+    std::string toYamlString() override;
 
 };
 #pragma endregion
@@ -254,7 +271,8 @@ public:
     typedef std::shared_ptr<FileLogAppender> ptr;
     //输出到文件的日志输出器需要一个文件名
     FileLogAppender(const std::string &filename);
-    virtual void log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override;
+    void log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override;
+    std::string toYamlString() override;
     
     bool reopen();      //打开文件
 private:
@@ -296,7 +314,7 @@ class NameFormatItem:public LogFormatter::FormatItem{
 public:
     NameFormatItem(const std::string& str = ""){}
     void format(std::ostream &os, std::shared_ptr<Logger> logger,LogLevel::Level level,LogEvent::ptr event) override{
-        os<<logger->getName();
+        os<<event->getLogger()->getName();
     } //直接输出到流中
 };
 
@@ -391,6 +409,8 @@ public:
     void init();
 
     Logger::ptr getRoot() const {return m_root;}
+
+    std::string toYamlString();
 private:
     std::map<std::string, Logger::ptr> m_loggers;
     Logger::ptr m_root;

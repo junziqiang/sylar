@@ -6,10 +6,6 @@
 
 #IncludeRegexTransform: 
 
-/root/syalr/sylar/config.cc
-config.h
-/root/syalr/sylar/config.h
-
 /root/syalr/sylar/config.h
 memory
 -
@@ -43,6 +39,8 @@ functional
 -
 stdarg.h
 -
+config.h
+/root/syalr/sylar/config.h
 
 /root/syalr/sylar/log.h
 string
@@ -71,10 +69,8 @@ util.h
 /root/syalr/sylar/util.h
 
 /root/syalr/sylar/sigleton.h
-
-/root/syalr/sylar/util.cc
-util.h
-/root/syalr/sylar/util.h
+memory
+-
 
 /root/syalr/sylar/util.h
 pthread.h

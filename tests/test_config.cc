@@ -1,7 +1,7 @@
 #include "../sylar/config.h"
 #include "../sylar/log.h"
 #include<yaml-cpp/yaml.h>
-sylar::ConfigVar<int>::ptr g_int_value_config = sylar::Config::Lookup("system.port", (int)8080,"system port");
+/*sylar::ConfigVar<int>::ptr g_int_value_config = sylar::Config::Lookup("system.port", (int)8080,"system port");
 sylar::ConfigVar<float>::ptr g_int_valuex_config = sylar::Config::Lookup("system.port", (float)8080,"system port");
 
 
@@ -19,39 +19,36 @@ sylar::ConfigVar<std::unordered_set<int> >::ptr g_int_unordered_set_value_config
 sylar::ConfigVar<std::map<std::string ,int> >::ptr g_int_map_value_config = sylar::Config::Lookup("system.map",std::map<std::string,int>{{"key",2}},"system int set");
 
 sylar::ConfigVar<std::unordered_map<std::string ,int> >::ptr g_int_unordered_map_value_config = sylar::Config::Lookup("system.umap",std::unordered_map<std::string,int>{{"key",2}},"system int set");
-
-void print_yaml(YAML::Node const &node, int level){
-    if(node.IsScalar()){
-        SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << std::string(level * 4,' ')<<node.Scalar() << " - " <<node.Type() << " - "<<level;
-    }
-    else if(node.IsNull()){
-         SYLAR_LOG_INFO(SYLAR_LOG_ROOT())<< std::string(level * 4,' ') << "NULL" << " - " <<node.Type() << " - "<<level;
-    }
-    else if (node.IsMap()){
-        for(auto it = node.begin();it != node.end();++it){
-            SYLAR_LOG_INFO(SYLAR_LOG_ROOT())<< std::string(level * 4,' ') << it->first << " - " <<it->second.Type() << " - "<<level;
-            print_yaml(it->second,level+1);
+*/
+void print_yaml(const YAML::Node& node, int level) {
+    if(node.IsScalar()) {
+        SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << std::string(level * 4, ' ')
+            << node.Scalar() << " - " << node.Type() << " - " << level;
+    } else if(node.IsNull()) {
+        SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << std::string(level * 4, ' ')
+            << "NULL - " << node.Type() << " - " << level;
+    } else if(node.IsMap()) {
+        for(auto it = node.begin();
+                it != node.end(); ++it) {
+            SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << std::string(level * 4, ' ')
+                    << it->first << " - " << it->second.Type() << " - " << level;
+            print_yaml(it->second, level + 1);
+        }
+    } else if(node.IsSequence()) {
+        for(size_t i = 0; i < node.size(); ++i) {
+            SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << std::string(level * 4, ' ')
+                << i << " - " << node[i].Type() << " - " << level;
+            print_yaml(node[i], level + 1);
         }
     }
-    else if(node.IsSequence()){
-            //for(auto it = node.begin();it != node.end();++it){
-            //SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << it->first << " - " <<it->second.Tag() << " - "<<level;
-            for(size_t i = 0; i< node.size();++i){
-                SYLAR_LOG_INFO(SYLAR_LOG_ROOT())<< std::string(level * 4,' ') << i << " - " <<node[i].Type() << " - "<<level;
-                //YAML::Node& hello = node[i];
-                print_yaml(node[i],level+1);
-            }
-            
-    }
-
 }
 void test_yaml(){
     //加载yaml
-    YAML::Node root = YAML::LoadFile("/root/workspace/bin/conf/log.yml");
+    YAML::Node root = YAML::LoadFile("/root/syalr/bin/conf/log.yml");
     print_yaml(root,0);
     //SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << root;
 }
-
+/*
 void testconfig(){
     SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) <<"before:"<< g_int_value_config->getValue();
     SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << "before:"<<g_float_value_config->toString();
@@ -150,11 +147,24 @@ void test_class(){
     sylar::Config::LoadFromYaml(root);
     SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) <<"after: " << g_person->getValue().toString() << " - " << g_person->toString();
 }
+*/
+void test_log(){
+    static sylar::Logger::ptr system_log = SYLAR_LOG_NAME("system");
+    SYLAR_LOG_INFO(system_log) << "hello system" << std::endl;
+    std::cout << sylar::LoggerMgr::GetInstance()->toYamlString() << std::endl;
+    YAML::Node root = YAML::LoadFile("/root/syalr/bin/conf/log.yml");
+    sylar::Config::LoadFromYaml(root);
+    std::cout << "===============================================" << std::endl;
+    std::cout << sylar::LoggerMgr::GetInstance()->toYamlString() << std::endl;
+    SYLAR_LOG_INFO(system_log) << "hello system" << std::endl;
+}
+
 int main(){
     //SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << g_int_value_config->getValue();
     //SYLAR_LOG_INFO(SYLAR_LOG_ROOT()) << g_float_value_config->toString();
     //test_yaml();
     //testconfig();
-    test_class();
+    //test_class();
+    test_log();
     return 0;
 }

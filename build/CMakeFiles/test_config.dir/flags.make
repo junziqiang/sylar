@@ -8,3 +8,5 @@ CXX_DEFINES =
 
 CXX_INCLUDES = -I/root/syalr/. -I/user/local/include 
 
+# Custom defines: CMakeFiles/test_config.dir/tests/test_config.cc.o_DEFINES = __FILE__="tests/test_config.cc"
+
