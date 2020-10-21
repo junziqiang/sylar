@@ -9,6 +9,21 @@ static thread_local std::string t_thread_name = "UNKNOW";
 
 static sylar::Logger::ptr g_logger = SYLAR_LOG_NAME("system");
 
+
+   Semaphore::Semaphore(uint32_t count = 0){
+
+   }
+    Semaphore::~Semaphore(){
+
+    }
+
+    void Semaphore::wait(){
+
+    }
+    void Semaphore::notify(){
+
+    }
+
 Thread* Thread::GetThis() {
     return t_thread;
 }
