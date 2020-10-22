@@ -10,18 +10,25 @@ static thread_local std::string t_thread_name = "UNKNOW";
 static sylar::Logger::ptr g_logger = SYLAR_LOG_NAME("system");
 
 
-   Semaphore::Semaphore(uint32_t count = 0){
-
+   Semaphore::Semaphore(uint32_t count){
+       if(sem_init(&m_semaphore,0,count)){
+           throw std::logic_error("sem_init error");
+       }
    }
     Semaphore::~Semaphore(){
-
+        sem_destroy(&m_semaphore);
     }
 
     void Semaphore::wait(){
-
+            //它的作用是从信号量的值减去一个“1”，但它永远会先等待该信号量为一个非零值才开始做减法。也就是说，如果你对一个值为2的信号量调用sem_wait()，线程将会继续执行，将信号量的值将减到1。
+        if(sem_wait(&m_semaphore)){
+            throw std::logic_error("sem_wait error");
+        }
     }
     void Semaphore::notify(){
-
+        if(sem_post(&m_semaphore)){
+            throw std::logic_error("sem_post error");
+        }
     }
 
 Thread* Thread::GetThis() {
@@ -53,7 +60,8 @@ Thread::Thread(std::function<void()> cb, const std::string& name)
             << " name=" << name;
         throw std::logic_error("pthread_create error");
     }
-    //m_semaphore.wait();
+    //因为有可能返回整个构造函数后这个线程还没有开始执行，因此需要在此等待
+    m_semaphore.wait();
 }
 
 Thread::~Thread() {
@@ -95,8 +103,8 @@ void* Thread::run(void* arg) {
 
     std::function<void()> cb;
     cb.swap(thread->m_cb);
-
-    //thread->m_semaphore.notify();
+    //唤醒
+    thread->m_semaphore.notify();
     cb();
     return 0;
 }
