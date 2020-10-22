@@ -2,6 +2,7 @@
 #include"config.h"
 #include"macro.h"
 #include "log.h"
+#include"scheduler.h"
 #include<atomic>
 namespace sylar{
 
@@ -90,19 +91,25 @@ void Fiber::reset(std::function<void()> cb){
     makecontext(&m_ctx,&Fiber::MainFunc,0);
     m_state = INIT;
 }
-//切换到当前协程执行
-void Fiber::swapIn(){
-    SetThis(this);
-    SYLAR_ASSERT(m_state != EXEC);
+void Fiber::call(){
     m_state = EXEC;
     if(swapcontext(&t_threadFiber->m_ctx,&m_ctx)){
         SYLAR_ASSERT2(false,"swapcontext");
     }
 }
+//切换到当前协程执行
+void Fiber::swapIn(){
+    SetThis(this);
+    SYLAR_ASSERT(m_state != EXEC);
+    m_state = EXEC;
+    if(swapcontext(&Scheduler::GetMainFiber()->m_ctx,&m_ctx)){
+        SYLAR_ASSERT2(false,"swapcontext");
+    }
+}
 //切换到后台执行
 void Fiber::swapOut(){
-    SetThis(t_threadFiber.get());
-    if(swapcontext(&m_ctx,&t_threadFiber->m_ctx)){
+    SetThis(Scheduler::GetMainFiber());
+    if(swapcontext(&m_ctx,&Scheduler::GetMainFiber()->m_ctx)){
         SYLAR_ASSERT2(false,"swapcontext");
     }
 }

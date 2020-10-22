@@ -6,7 +6,9 @@
 #include "thread.h"
 namespace sylar{
 //需要返回this指针时，需要继承enable_shared_from_this
+class Scheduler;
 class Fiber : public std::enable_shared_from_this<Fiber>{
+friend class Scheduler;
 public:
     typedef std::shared_ptr<Fiber> ptr;
 
@@ -30,7 +32,10 @@ public:
     void swapIn();
     //切换到后台执行
     void swapOut();
+
+    void call();
     uint64_t GetId()const{return m_id;};
+    State getState() const { return m_state;}
 public:
     static void SetThis(Fiber* f);
     static Fiber::ptr GetThis();
