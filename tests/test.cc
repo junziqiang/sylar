@@ -6,7 +6,7 @@ int main(int argc,char** argv){
     sylar::Logger::ptr logger(new sylar::Logger);
     //std::cout << logger<<std::endl;
     logger->addAppender(sylar::LogAppender::ptr(new sylar::StdoutLogAppender));
-    sylar::LogEvent::ptr event(new sylar::LogEvent(logger,sylar::LogLevel::DEBUG,__FILE__, __LINE__, 0, sylar::GetThreadId(), 2, time(0)));
+    sylar::LogEvent::ptr event(new sylar::LogEvent(logger,sylar::LogLevel::DEBUG,__FILE__, __LINE__, 0, sylar::GetThreadId(), 2, time(0),sylar::Thread::GetName()));
 
     event->getSS()<<"get ss"<<std::endl;
 

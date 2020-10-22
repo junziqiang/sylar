@@ -23,7 +23,7 @@
     if(logger->getLevel() <= level) \
         sylar::LogEventWrap(sylar::LogEvent::ptr(new sylar::LogEvent(logger, level, \
                         __FILE__, __LINE__, 0, sylar::GetThreadId(),\
-                sylar::GetFiberId(), time(0)))).getSS()
+                sylar::GetFiberId(), time(0),sylar::Thread::GetName()))).getSS()
 /*#define SYLAR_LOG_LEVEL(logger,level) \
     if(logger->getLevel() <= level) \
         sylar::LogEventWrap(sylar::LogEvent::ptr(new sylar::Logevent(logger,level,__FILE__,__LINE__,0,sylar::GetThreadId(),\
@@ -40,7 +40,7 @@
     if(logger->getLevel() <= level) \
         sylar::LogEventWrap(sylar::LogEvent::ptr(new sylar::LogEvent(logger, level, \
                         __FILE__, __LINE__, 0, sylar::GetThreadId(),\
-                sylar::GetFiberId(), time(0)))).getEvent()->format(fmt, __VA_ARGS__)
+                sylar::GetFiberId(), time(0),sylar::Thread::GetName()))).getEvent()->format(fmt, __VA_ARGS__)
 
 
 #define SYLAR_LOG_FMT_DEBUG(logger, fmt, ...) SYLAR_LOG_FMT_LEVEL(logger, sylar::LogLevel::DEBUG, fmt, __VA_ARGS__)
@@ -91,7 +91,10 @@ class LogEvent{
 public:
     //智能指针，C++中用来管理内存的方式，share_ptr允许多个指针指向同一个对象，unique_ptr则独占对象
     typedef std::shared_ptr<LogEvent> ptr;
-    LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level,const char* file,int32_t m_line,uint32_t elapse,uint32_t thread_id,uint32_t fiber_id,uint64_t time);
+    LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level
+            ,const char* file, int32_t line, uint32_t elapse
+            ,uint32_t thread_id, uint32_t fiber_id, uint64_t time
+            ,const std::string& thread_name);
     //~LogEvent();
     const char* getFile() const{return m_file;}
     int32_t getLine() const{return m_line;}
@@ -101,6 +104,7 @@ public:
     uint64_t getTime() const {return m_time;}                
     std::string getContent() const {return m_ss.str();} 
     std::shared_ptr<Logger> getLogger() const {return m_logger;}
+    const std::string& getThreadName() const{return m_threadName;}
 
     LogLevel::Level getLevel() const {return m_level;}
 
@@ -116,7 +120,7 @@ private:
     uint32_t m_fiberId = 0;         //协程号
     uint64_t m_time;                //时间
     std::stringstream m_ss;          //消息
-
+    std::string m_threadName;
     std::shared_ptr<Logger> m_logger;
     LogLevel::Level m_level;
 };
@@ -335,6 +339,13 @@ public:
     } //直接输出到流中
 };
 
+class ThreadNameFormatItem:public LogFormatter::FormatItem{
+public:
+    ThreadNameFormatItem(const std::string& str = ""){}
+    void format(std::ostream &os, std::shared_ptr<Logger> logger,LogLevel::Level level,LogEvent::ptr event) override{
+        os<<event->getThreadName();
+    } //直接输出到流中
+};
 class FiberIdFormatItem:public LogFormatter::FormatItem{
 public:
     FiberIdFormatItem(const std::string& str = ""){}
@@ -342,6 +353,7 @@ public:
         os<<event->getFiberId();
     } //直接输出到流中
 };
+
 class DateTimeFormatItem:public LogFormatter::FormatItem{
 public:
     //DateTimeFormatItem(const std::string& str = ""){}
