@@ -8,4 +8,5 @@
 #include "sigleton.h"
 #include "thread.h"
 #include "util.h"
+#include "fiber.h"
 #endif
