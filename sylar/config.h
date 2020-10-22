@@ -1,10 +1,10 @@
 #ifndef __SYLAR_CONFIG_H__
 #define __SYLAR_CONFIG_H__
-
+#pragma once
 #include<memory>
 #include<sstream>
 #include<boost/lexical_cast.hpp>
-#include"log.h"
+
 #include<yaml-cpp/yaml.h>
 #include<vector>
 #include<list>
@@ -13,7 +13,9 @@
 #include<unordered_map>
 #include<unordered_set>
 #include<functional>
-
+#include "thread.h"
+#include"log.h"
+#include "util.h"
 namespace sylar{
 class ConfigVarBase{
 public:
@@ -266,6 +268,7 @@ public:
 template<class T, class FromStr = LexicalCast<std::string, T>, class ToStr = LexicalCast<T, std::string> >
 class ConfigVar : public ConfigVarBase{
 public:
+    typedef RWMutex RWMutexType;
     typedef std::shared_ptr<ConfigVar> ptr;
     //配置进行更改之后，需要让相应的代码能够感知到
     typedef std::function<void(const T& old_value,const T& new_value)> on_change_cb;
@@ -277,6 +280,7 @@ public:
         {
             //字符串转换
             //return boost::lexical_cast<std::string>(m_val);
+            RWMutexType::ReadLock lock(m_mutex);
             return ToStr()(m_val);
             /* code */
         }
@@ -304,32 +308,48 @@ public:
         return false;
         
     }
-    const T getValue() const {return m_val;}
+    const T getValue(){
+        RWMutexType::ReadLock lock(m_mutex);
+        return m_val;
+        }
     void setValue(const T& val){
-        if(val == m_val){
-            return;
+        {
+            //局部
+            RWMutexType::ReadLock lock(m_mutex);
+            if(val == m_val){
+                return;
+            }
+            for(auto& i :m_cbs){
+                i.second(m_val,val);
+            }
         }
-        for(auto& i :m_cbs){
-            i.second(m_val,val);
-        }
+        RWMutexType::WriteLock lock(m_mutex);
          m_val = val;   
         }
     std::string getTypeName() const override{return typeid(T).name();}
     //事件机制
-    void addListener(uint16_t key,on_change_cb cb){
-        m_cbs[key] = cb;
+    uint64_t addListener(on_change_cb cb){
+        static uint64_t s_fun_id = 0;
+        RWMutexType::WriteLock lock(m_mutex);
+        ++s_fun_id;
+        m_cbs[s_fun_id] = cb;
+        return s_fun_id;
     }
     void delListener(uint64_t key){
+        RWMutexType::WriteLock lock(m_mutex);
         m_cbs.erase(key);
     }
     on_change_cb getListener(uint16_t key){
+        RWMutexType::ReadLock lock(m_mutex);
         auto it = m_cbs.find(key);
         return it == m_cbs.end() ? nullptr :it->second;
     }
     void clearListener(){
+        RWMutexType::WriteLock lock(m_mutex);
         m_cbs.clear();
     }
 private:
+    RWMutexType m_mutex;
     T m_val;
     //变更回调函数组，因为functional没有比较函数，不能放在vec中，因为删除的时候无法进行比较
     std::map<uint64_t,on_change_cb> m_cbs;
@@ -338,8 +358,11 @@ private:
 class Config{
 public:
     typedef std::unordered_map<std::string,ConfigVarBase::ptr> ConfigVarMap;
+    //读多写少使用读写锁
+    typedef RWMutex RWMutexType;
     template<class T>
     static typename ConfigVar<T>::ptr Lookup(const std::string& name,const T& default_val,const std::string& description = ""){
+        RWMutexType::WriteLock lock(GetMutex());
        auto it = GetDatas().find(name);
        if(it != GetDatas().end()){
            auto tmp = std::dynamic_pointer_cast<ConfigVar<T> >(it->second);
@@ -373,6 +396,8 @@ public:
     }
     template<class T>
     static typename ConfigVar<T>::ptr Lookup(const std::string name){
+        //RWMutexType test = s_mutex;
+        RWMutexType::ReadLock lock(GetMutex());
         auto it = GetDatas().find(name);
         if(it == GetDatas().end()){
             return nullptr;
@@ -383,12 +408,19 @@ public:
     static void LoadFromYaml(const YAML::Node& root);
 
     static ConfigVarBase::ptr LookupBase(const std::string& name);
+
+    static void Visit(std::function<void(ConfigVarBase::ptr)> cb);
 private:
     static ConfigVarMap& GetDatas(){
         static ConfigVarMap s_datas;
         return s_datas;
     }
-
+    //static RWMutexType s_mutex;
+    
+    static RWMutexType& GetMutex(){
+        static RWMutexType s_mutex;
+        return s_mutex;
+    }
 };
 
 }

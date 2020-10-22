@@ -1,5 +1,6 @@
 #ifndef __SYLAR_UTIL_H__
 #define __SYLAR_UTIL_H__
+#pragma once
 #include<pthread.h>
 #include<unistd.h>
 #include<sys/syscall.h>

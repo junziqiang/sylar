@@ -1,17 +1,17 @@
 #ifndef __SYLAR_LOG_H__
 #define __SYLAR_LOG_H__
-#include<string>
-#include<stdint.h>
-#include<memory>
-#include<list>
-#include<iostream>
-#include<fstream>
-#include<sstream>
-#include<vector>
-#include<map>
-#include<time.h>
-#include "sigleton.h"
+#pragma once
+#include <string>
+#include <stdint.h>
+#include <memory>
+#include <list>
+#include <sstream>
+#include <fstream>
+#include <vector>
+#include <stdarg.h>
+#include <map>
 #include "util.h"
+#include "sigleton.h"
 #include "thread.h"
 
 /********************************************************************************************************************************************

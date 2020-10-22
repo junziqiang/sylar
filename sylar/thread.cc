@@ -1,6 +1,6 @@
-//#include "thread.h"
+#include "thread.h"
 #include "log.h"
-//#include "util.h"
+#include "util.h"
 
 namespace sylar {
 //线程局部存储

@@ -1,12 +1,13 @@
 #ifndef __SYLAR_THREAD_H__
 #define __SYLAR_THREAD_h__
-
+#pragma once
 #include<thread>
 #include<functional>
 #include<memory>
 #include<pthread.h>
 #include<semaphore.h>
 #include<atomic>
+
 namespace sylar{
 
 class Semaphore{
