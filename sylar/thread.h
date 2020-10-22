@@ -6,7 +6,7 @@
 #include<memory>
 #include<pthread.h>
 #include<semaphore.h>
-
+#include<atomic>
 namespace sylar{
 
 class Semaphore{
@@ -173,7 +173,46 @@ public:
     void wrlock(){}
     void unlock(){}
 };
+//自旋锁
+class Spinlock{
+public:
+typedef ScopedLockImpl<Spinlock> Lock;
+    Spinlock(){
+        pthread_spin_init(&m_mutex,0);
+    }
+    ~Spinlock(){
+        pthread_spin_destroy(&m_mutex);
+    }
+    void lock(){
+        pthread_spin_lock(&m_mutex);
+    }
+    void unlock(){
+        pthread_spin_unlock(&m_mutex);
+    }
 
+private:
+pthread_spinlock_t m_mutex;
+};
+
+class CASLock{
+public:
+    typedef ScopedLockImpl<CASLock> Lock;
+    CASLock(){
+        m_mutex.clear();
+    }
+    ~CASLock(){
+
+    }
+    void lock(){
+        while(std::atomic_flag_test_and_set_explicit(&m_mutex,std::memory_order_acquire));
+    }
+    void unlock(){
+        std::atomic_flag_clear_explicit(&m_mutex,std::memory_order_release);
+    }
+private:
+    //每次都要重新去取数据
+    volatile std::atomic_flag m_mutex;
+};
 class Thread{
 public:
     typedef std::shared_ptr<Thread> ptr;
