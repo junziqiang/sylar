@@ -130,6 +130,15 @@ public:
 private:
     pthread_mutex_t m_mutex;
 };
+//验证线程安全，什么都不做
+class NullMutex{
+public:
+    typedef ScopedLockImpl<NullMutex> Lock;
+    NullMutex(){}
+    ~NullMutex(){}
+    void lock(){}
+    void unlock(){}
+};
 
 //读写互斥量
 class RWMutex{
@@ -153,6 +162,16 @@ public:
     }
 private:
     pthread_rwlock_t m_lock;
+};
+class NullRWMutex{
+public:
+    typedef ReadScopedLockImpl<NullMutex> ReadLock;
+    typedef WriteScopedLockImpl<NullMutex> WriteLock;
+    NullRWMutex(){}
+    ~NullRWMutex(){}
+    void rdlock(){}
+    void wrlock(){}
+    void unlock(){}
 };
 
 class Thread{

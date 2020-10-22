@@ -4,5 +4,5 @@
 #include "sylar/log.h"
 #include "sylar/util.h"
 #include "sylar/sigleton.h"
-#include "sylar/thread.h"
+//#include "sylar/thread.h"
 #endif

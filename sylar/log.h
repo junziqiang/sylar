@@ -12,6 +12,7 @@
 #include<time.h>
 #include "sigleton.h"
 #include "util.h"
+#include "thread.h"
 
 /********************************************************************************************************************************************
  * ******************************************************************************************************************************************/
@@ -171,9 +172,10 @@ private:
 //日志输出的地方
 #pragma region
 class LogAppender{
-    friend class Logger;
+friend class Logger;
 public:
     typedef std::shared_ptr<LogAppender> ptr;
+    typedef Mutex MutexType;
     virtual ~LogAppender(){}
     //纯虚函数是在声明虚函数时被“初始化”为0的函数。声明纯虚函数的一般形式是 virtual 函数类型 函数名 (参数表列) =0;
     /*
@@ -196,6 +198,10 @@ public:
 protected:
     LogLevel::Level m_level = LogLevel::DEBUG;
     bool m_hasFormatter = false;
+    //写比较多
+    MutexType m_mutex;
+    //当复杂类型写的时候，里面有两个类型时，发生多谢错误的时候会引发出严重的内存错误
+    //简单类型的话最多是数值不准
     LogFormatter::ptr m_formatter;
 };
 #pragma endregion
@@ -210,6 +216,7 @@ friend class LoggerManager;
 public:
     typedef std::shared_ptr<Logger> ptr;
     //日志
+    typedef Mutex MutexType;
     Logger(const std::string &name = "root");
     void log(LogLevel::Level level, LogEvent::ptr event);
 
@@ -239,6 +246,7 @@ private:
     
     std::string m_name;         //名字
     LogLevel::Level m_level;
+    MutexType m_mutex;
     std::list<LogAppender::ptr> m_appenders;     //appender列表
     LogFormatter::ptr m_formatter;
 
@@ -403,6 +411,7 @@ public:
 #pragma region
 class LoggerManager{
 public:
+    typedef Mutex MutexType;
     LoggerManager();
     Logger::ptr getLogger(const std::string& name);
 
@@ -412,6 +421,7 @@ public:
 
     std::string toYamlString();
 private:
+    MutexType m_mutex;
     std::map<std::string, Logger::ptr> m_loggers;
     Logger::ptr m_root;
 
